@@ -9,13 +9,13 @@ package trabalho2_redes;
  *
  * @author Sammy Guergachi <sguergachi at gmail.com>
  */
-public class Trabalho2_Redes {
+public class AssistentClient extends Thread {
 
-    /**
-     * @param args the command line arguments
-     */
-    public static void main(String[] args) {
-        // TODO code application logic here
+    public AssistentClient() {
+        this.start();
     }
-    
+
+    public void run() {
+
+    }
 }
