@@ -6,20 +6,26 @@
 
 package trabalho2_redes;
 
+import java.io.Serializable;
+
 /**
  * 
  * @author Sammy Guergachi <sguergachi at gmail.com>
  */
-public class Package {
+public class Package implements Serializable{
     private int sequenceNumber;
     private int ackNumber;
-    private boolean typePackage[]; // [ACK][SYN][FYN]
+    private int port;
+    private boolean typePackage[] = new boolean[3]; // [ACK][SYN][FYN]
     private short idClientNumber;
+    private byte[] data  = new byte[512];
     
     public Package(){
         super();
-        typePackage = new boolean[3];
         
+    }
+    public Package(byte[] data){
+        this.data = data;
     }
     public Package(int sn){
         this.sequenceNumber = sn;
@@ -48,7 +54,15 @@ public class Package {
         
         
     }
-
+    public Package(int sn, int an, short idc, boolean ack, boolean syn, boolean fyn,int port){
+        this(sn,an,idc,ack,syn,fyn);
+        this.port = port;
+        
+        
+        
+    }
+    
+    
     public int getSequenceNumber() {
         return sequenceNumber;
     }
@@ -65,8 +79,18 @@ public class Package {
         this.ackNumber = ackNumber;
     }
 
-    public boolean[] getTypePackage() {
-        return typePackage;
+    public String getTypePackage() {
+        if(typePackage[0] == true){
+            return "ACK";
+        }else
+        if(typePackage[1] == true){
+            return "SYN";
+        }else
+        if(typePackage[2] == true){
+            return "FYN";
+        }else{
+            return "Data Package";
+        }
     }
 
     public void setTypePackage(boolean[] typePackage) {
@@ -80,5 +104,22 @@ public class Package {
     public void setIdClientNumber(short idClientNumber) {
         this.idClientNumber = idClientNumber;
     }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
+    }
+
+    public byte[] getData() {
+        return data;
+    }
+
+    public void setData(byte[] data) {
+        this.data = data;
+    }
+    
     
 }
