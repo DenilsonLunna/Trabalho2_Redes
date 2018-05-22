@@ -11,8 +11,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 
 
 /**
@@ -42,26 +41,24 @@ public class Assistent extends Thread{
             DatagramSocket assistentUDP = new DatagramSocket(port);
             Package SYNACK = new Package(4321, client.getSequenceNumber()+1,idClient++,true,true,false,port);//SYNACK
             byte[] pktSend = convert.convertPackageToByte(SYNACK);
-            DatagramPacket pkt = new DatagramPacket(pktSend, pktSend.length, client.getIp(), client.getPort());
-            assistentUDP.send(pkt);
-            System.out.println("");
-            System.out.println("Package SYNACK Sended.");
-            System.out.println("Client Package : SeqNum( "+SYNACK.getSequenceNumber()+" ) - ACKNumber( "+SYNACK.getAckNumber()+" ) - ID-Client( "+SYNACK.getIdClientNumber()+" ) - (Type-Package( "+SYNACK.getTypePackage()+" )");
-            System.out.println("---------------------------------------------------------------------------------------------->\n");
+            DatagramPacket packageSYNACK = new DatagramPacket(pktSend, pktSend.length, client.getIp(), client.getPort());
+            assistentUDP.send(packageSYNACK);
+            System.out.println("package SYNACK sended");
             //____________________________________________________________________________________________________send SYNACK
             
             
-            System.out.println("Waiting ACK from the Client...");
+            System.out.println("Assistent Waiting ACK from the Client...");
             
             
             //_______________________________________________________________________________wait ACK from the client
-            byte[] pktReceive = new byte[675];
+            byte[] pktReceive = new byte[703];
             DatagramPacket pktReceiveACK = new DatagramPacket(pktReceive, pktReceive.length);
             assistentUDP.receive(pktReceiveACK);
+            Package pktACKReceived = convert.convertByteToPackage(pktSend);
             System.out.println("ACK received from the client.");
             //_______________________________________________________________________________________________________
             
-            
+            //to be continued
             
             
         } catch (SocketException ex) {

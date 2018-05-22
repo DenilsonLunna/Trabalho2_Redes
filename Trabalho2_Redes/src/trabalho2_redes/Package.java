@@ -13,12 +13,12 @@ import java.io.Serializable;
  * @author Sammy Guergachi <sguergachi at gmail.com>
  */
 public class Package implements Serializable{
-    private int sequenceNumber;
-    private int ackNumber;
-    private int port;
-    private boolean typePackage[] = new boolean[3]; // [ACK][SYN][FYN]
-    private short idClientNumber;
-    private byte[] data  = new byte[512];
+    public int sequenceNumber;
+    public int ackNumber;
+    public int port;
+    public boolean typePackage[] = new boolean[3]; // [ACK][SYN][FYN]
+    public short idClientNumber;
+    public byte[] data  = new byte[512];
     
     public Package(){
         super();
@@ -61,65 +61,28 @@ public class Package implements Serializable{
         
         
     }
-    
-    
-    public int getSequenceNumber() {
-        return sequenceNumber;
-    }
-
-    public void setSequenceNumber(int sequenceNumber) {
-        this.sequenceNumber = sequenceNumber;
-    }
-
-    public int getAckNumber() {
-        return ackNumber;
-    }
-
-    public void setAckNumber(int ackNumber) {
-        this.ackNumber = ackNumber;
-    }
-
     public String getTypePackage() {
-        if(typePackage[0] == true){
+        if(typePackage[0]&& typePackage[1]){
+            return "SYNACK";
+        }else
+        if(typePackage[0]&& typePackage[2]){
+            return "FYNACK";
+        }else
+        if(typePackage[0]){
             return "ACK";
         }else
-        if(typePackage[1] == true){
+        if(typePackage[1]){
             return "SYN";
         }else
-        if(typePackage[2] == true){
+        if(typePackage[2]){
             return "FYN";
         }else{
             return "Data Package";
         }
+        
     }
 
-    public void setTypePackage(boolean[] typePackage) {
-        this.typePackage = typePackage;
-    }
-
-    public short getIdClientNumber() {
-        return idClientNumber;
-    }
-
-    public void setIdClientNumber(short idClientNumber) {
-        this.idClientNumber = idClientNumber;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public void setPort(int port) {
-        this.port = port;
-    }
-
-    public byte[] getData() {
-        return data;
-    }
-
-    public void setData(byte[] data) {
-        this.data = data;
-    }
+   
     
     
 }

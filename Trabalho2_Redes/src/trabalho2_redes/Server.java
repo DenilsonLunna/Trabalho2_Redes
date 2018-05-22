@@ -25,7 +25,7 @@ import sun.security.x509.IPAddressName;
  * @author Sammy Guergachi <sguergachi at gmail.com>
  */
 public class Server {
-    //last code = 10
+    //last code = 14
     
     private static ArrayList<Assistent> assistentList = new ArrayList<>();
     
@@ -38,8 +38,9 @@ public class Server {
             
             while(true){
                 //______________________________________________________________________________ Waiting package SYN
-                byte packageFile[] = new byte[675]; 
+                byte packageFile[] = new byte[703]; 
                 DatagramPacket pktReceive = new DatagramPacket(packageFile, packageFile.length);
+                System.out.println("Server waiting packages from the clients");
                 serverUDP.receive(pktReceive);
                 System.out.println("Package SYN received");
                 //__________________________________________________________________________________________________
@@ -49,12 +50,16 @@ public class Server {
              
                 if("SYN".equals(pack.getTypePackage())){
                     //create new Thread for to Administer Client
-                    InfoClient clientInformations = new InfoClient(pack.getSequenceNumber(), pack.getPort(), pack.getIdClientNumber(), pktReceive.getAddress());
+                    System.out.println(" ____PACKAGE RECEIVED_____");
+                    System.out.println("|                         ");
+                    System.out.println("| Sequence Number = "+pack.sequenceNumber);
+                    System.out.println("| Ack Number = "+pack.ackNumber);
+                    System.out.println("| Port = "+pack.port);
+                    System.out.println("| Id = "+pack.idClientNumber);
+                    System.out.println("| IP client = "+pktReceive.getAddress());
+                    System.out.println("|_________________________");
+                    InfoClient clientInformations = new InfoClient(pack.sequenceNumber, pktReceive.getPort(), pack.idClientNumber, pktReceive.getAddress());
                     new Assistent(clientInformations, assistentPort++);    
-                }else{//data package
-                   
-                        
-                
                 }
                 
             }

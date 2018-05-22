@@ -17,37 +17,35 @@ import java.io.ObjectOutputStream;
  * @author Sammy Guergachi <sguergachi at gmail.com>
  */
 public class ConvertClass {
-    public static Package convertByteToPackage(byte[] pack) {
+    ObjectInputStream ois;
+    ObjectOutputStream ous;
+    public Package convertByteToPackage(byte[] pack) {
 
         try {
             ByteArrayInputStream bao = new ByteArrayInputStream(pack);
-            ObjectInputStream ous;
-            ous = new ObjectInputStream(bao);
-            return (Package) ous.readObject();
+            ois = new ObjectInputStream(bao);
+            return (Package) ois.readObject();
 
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
+            System.out.println("Erro I/O from the transform byte to Package. cod = 12");
         } catch (ClassNotFoundException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            System.out.println("Erro ClassNotFound in ConvertClass. cod = 13");
         }
 
         return null;
     }
-    public static byte[] convertPackageToByte(Package pkt) {
+    public byte[] convertPackageToByte(Package pkt) {
         try {
             //cria um  array de byte  que irei passar para o objectOutput para retornar o byte[] , 
             //o pacote tem q implementar o Serializable
             ByteArrayOutputStream bao = new ByteArrayOutputStream();
-            ObjectOutputStream ous;
+           
             ous = new ObjectOutputStream(bao);
             ous.writeObject(pkt);
             return bao.toByteArray();
         } catch (IOException e) {
-            // TODO Auto-generated catch block
-            System.out.println("erro ao converte pacote em byte");
-            e.printStackTrace();
+            System.out.println("Erro I/O from the transform package to Byte. cod = 14");
         }
 
         return null;
