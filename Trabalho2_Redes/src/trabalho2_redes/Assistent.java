@@ -24,7 +24,7 @@ public class Assistent extends Thread{
     private InfoClient client;
     private int port;
     ConvertClass convert = new ConvertClass();
-    public static short idClient = 0;
+    public static short idClient = 1;
     public Assistent(){
         
     }
@@ -39,7 +39,7 @@ public class Assistent extends Thread{
         try {
             //____________________________________________________________________________________________________handShake send SYNACK
             DatagramSocket assistentUDP = new DatagramSocket(port);
-            Package SYNACK = new Package(4321, client.getSequenceNumber()+1,idClient++,true,true,false,port);//SYNACK
+            Package SYNACK = new Package(4321, client.getSequenceNumber()+1,idClient++,true,true,false);//SYNACK
             byte[] pktSend = convert.convertPackageToByte(SYNACK);
             DatagramPacket packageSYNACK = new DatagramPacket(pktSend, pktSend.length, client.getIp(), client.getPort());
             assistentUDP.send(packageSYNACK);

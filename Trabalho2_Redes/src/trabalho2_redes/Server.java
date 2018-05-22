@@ -54,7 +54,7 @@ public class Server {
                     System.out.println("|                         ");
                     System.out.println("| Sequence Number = "+pack.sequenceNumber);
                     System.out.println("| Ack Number = "+pack.ackNumber);
-                    System.out.println("| Port = "+pack.port);
+                    System.out.println("| Port = "+pktReceive.getPort());
                     System.out.println("| Id = "+pack.idClientNumber);
                     System.out.println("| IP client = "+pktReceive.getAddress());
                     System.out.println("|_________________________");

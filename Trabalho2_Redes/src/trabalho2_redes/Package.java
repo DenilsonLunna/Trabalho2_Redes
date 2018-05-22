@@ -15,7 +15,6 @@ import java.io.Serializable;
 public class Package implements Serializable{
     public int sequenceNumber;
     public int ackNumber;
-    public int port;
     public boolean typePackage[] = new boolean[3]; // [ACK][SYN][FYN]
     public short idClientNumber;
     public byte[] data  = new byte[512];
@@ -54,13 +53,7 @@ public class Package implements Serializable{
         
         
     }
-    public Package(int sn, int an, short idc, boolean ack, boolean syn, boolean fyn,int port){
-        this(sn,an,idc,ack,syn,fyn);
-        this.port = port;
-        
-        
-        
-    }
+    
     public String getTypePackage() {
         if(typePackage[0]&& typePackage[1]){
             return "SYNACK";

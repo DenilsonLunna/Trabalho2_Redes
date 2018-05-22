@@ -29,7 +29,7 @@ public class Client {
 
     private String id;
     private static int portRandom = 8000;
-    public int port;
+   
     private String fileName;
     private static ArrayList<Package> packagesFile = new ArrayList<>();
     public DatagramSocket clienteUDP = null;
@@ -72,7 +72,7 @@ public class Client {
         
             //___________________________________________________________________________________SYN 
             IPAddress = InetAddress.getByName("localhost");
-            SYN = new Package(12345, 0, (short) 0, false, true, false,portRandom);
+            SYN = new Package(12345, 0, (short) 0, false, true, false);
             byte[] SYNB = convert.convertPackageToByte(SYN);
             DatagramPacket packetSYN = new DatagramPacket(SYNB, SYNB.length, IPAddress, 6000);
             client.clienteUDP.send(packetSYN);
@@ -93,6 +93,9 @@ public class Client {
         //___________________________________________________________________________________wait pakcage from the verification SYN-ACK
         
         Package pktSYNACKReceived = null;
+        int portAssistent = 0;
+        InetAddress addressAssistent = null;
+        
         try {
             
             //_______________________________________________________________________________Receive SYNACK
@@ -100,9 +103,11 @@ public class Client {
             DatagramPacket packageSYNACK = new DatagramPacket(packageFile, packageFile.length);
             System.out.println("Waiting SYNACK...na porta");
             client.clienteUDP.receive(packageSYNACK);// receive package SYN-ACK
+            portAssistent = packageSYNACK.getPort();
+            addressAssistent = packageSYNACK.getAddress();
             pktSYNACKReceived = convert.convertByteToPackage(packageFile);
             System.out.println("Package SYNACK Received.");
-            System.out.println("Client Package : SeqNum( "+pktSYNACKReceived.sequenceNumber+" )  ACKNumber( "+pktSYNACKReceived.ackNumber+" )  ID-Client( "+pktSYNACKReceived.idClientNumber+" )  Type-Package( "+pktSYNACKReceived.getTypePackage()+" )");
+            System.out.println("Server Package : SeqNum( "+pktSYNACKReceived.sequenceNumber+" )  ACKNumber( "+pktSYNACKReceived.ackNumber+" )  ID-Client( "+pktSYNACKReceived.idClientNumber+" )  Type-Package( "+pktSYNACKReceived.getTypePackage()+" )");
             System.out.println("---------------------------------------------------------------------------------------------->\n");
             //_______________________________________________________________________________SYNACK
             
@@ -114,12 +119,12 @@ public class Client {
         //____________________________________________________________________________________Send ACK from the SYNACK
         
         try {
-            Package ACK = new Package(pktSYNACKReceived.sequenceNumber, pktSYNACKReceived.ackNumber+1, pktSYNACKReceived.idClientNumber, true, false, false);
+            Package ACK = new Package(pktSYNACKReceived.sequenceNumber, pktSYNACKReceived.ackNumber, pktSYNACKReceived.idClientNumber, true, false, false);
             byte[] SYNB = convert.convertPackageToByte(SYN);
-            DatagramPacket packetACK = new DatagramPacket(SYNB, SYNB.length, IPAddress, 6000);
+            DatagramPacket packetACK = new DatagramPacket(SYNB, SYNB.length,addressAssistent,portAssistent);
             client.clienteUDP.send(packetACK);
-            System.out.println("Send Pakcage SYN for the Server");
-            System.out.println("Client Package : SeqNum( "+ACK.sequenceNumber+" )  ACKNumber( "+ACK.ackNumber+" )  ID-Client( "+ACK.idClientNumber+" )  Type-Package( "+ACK.getTypePackage()+" )");
+            System.out.println("Send Pakcage ACK for the Server");
+            System.out.println("Client Package : SeqNum( "+ACK.ackNumber+" )  ACKNumber( "+(ACK.sequenceNumber+1)+" )  ID-Client( "+ACK.idClientNumber+" )  Type-Package( "+ACK.getTypePackage()+" )");
             System.out.println("<----------------------------------------------------------------------------------------------\n");
         } catch (IOException ex) {
             System.out.println("Erro I/O to send pakcage ACK after SYNACK in Client. cod = 11");
@@ -128,25 +133,7 @@ public class Client {
             
             
             
-            //send first package containing data or not
-            //send remaining the packages
-            
-            /*while (packagesFile.size() > 0) {
-            
-            verific Acks arrived
-            make size the windown for send packages
-            while(variable < size windown){
-            Package pack = packagesFile.remove(packagesFile.size()-1);
-            fill in the remaining data from the pakcage
-            Sequence Number
-            ID client
-            Type Package [ACK][SYN][FYN]
-            
-            serializable pack
-            DatagramPacket pkt = new DatagramPacket(pack, pack.size, ServerAddress, portserver); //create package here
-            send package for server
-            }
-            }*/
+           //send packages from the file
         
 
     }
