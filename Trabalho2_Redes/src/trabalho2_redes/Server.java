@@ -25,7 +25,7 @@ import sun.security.x509.IPAddressName;
  * @author Sammy Guergachi <sguergachi at gmail.com>
  */
 public class Server {
-    //last code = 14
+    //last code = 17
     
     private static ArrayList<Assistent> assistentList = new ArrayList<>();
     
@@ -38,7 +38,7 @@ public class Server {
             
             while(true){
                 //______________________________________________________________________________ Waiting package SYN
-                byte packageFile[] = new byte[703]; 
+                byte packageFile[] = new byte[692]; 
                 DatagramPacket pktReceive = new DatagramPacket(packageFile, packageFile.length);
                 System.out.println("Server waiting packages from the clients");
                 serverUDP.receive(pktReceive);

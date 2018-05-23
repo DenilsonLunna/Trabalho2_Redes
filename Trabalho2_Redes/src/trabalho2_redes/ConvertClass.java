@@ -17,9 +17,9 @@ import java.io.ObjectOutputStream;
  * @author Sammy Guergachi <sguergachi at gmail.com>
  */
 public class ConvertClass {
-    ObjectInputStream ois;
-    ObjectOutputStream ous;
-    public Package convertByteToPackage(byte[] pack) {
+    static ObjectInputStream ois;
+    static ObjectOutputStream ous;
+    public static Package convertByteToPackage(byte[] pack) {
 
         try {
             ByteArrayInputStream bao = new ByteArrayInputStream(pack);
@@ -35,7 +35,7 @@ public class ConvertClass {
 
         return null;
     }
-    public byte[] convertPackageToByte(Package pkt) {
+    public static byte[] convertPackageToByte(Package pkt) {
         try {
             //cria um  array de byte  que irei passar para o objectOutput para retornar o byte[] , 
             //o pacote tem q implementar o Serializable

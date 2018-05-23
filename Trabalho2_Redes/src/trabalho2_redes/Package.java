@@ -26,30 +26,36 @@ public class Package implements Serializable{
     public Package(byte[] data){
         this.data = data;
     }
-    public Package(int sn){
-        this.sequenceNumber = sn;
-    }
-    public Package(int sn, int an){
-        this(sn);
-        this.ackNumber = an;
-        
-    }
-    public Package(int sn, int an, short idc){
-        this(sn,an);
-        this.idClientNumber = idc;  
-    }
-    public Package(boolean ack, boolean syn, boolean fyn){
-        this.typePackage[0] = ack;
-        this.typePackage[1] = syn;
-        this.typePackage[2] = fyn;
-        
-        
-    }
     public Package(int sn, int an, short idc, boolean ack, boolean syn, boolean fyn){
-        this(sn,an,idc);
+        this.sequenceNumber = sn;
+        this.ackNumber = an;
+        this.idClientNumber = idc;
         this.typePackage[0] = ack;
         this.typePackage[1] = syn;
         this.typePackage[2] = fyn;
+       
+        
+        
+    }
+    public Package(int sn, int an, boolean ack, boolean syn, boolean fyn){
+        this.sequenceNumber = sn;
+        this.ackNumber = an;
+        this.typePackage[0] = ack;
+        this.typePackage[1] = syn;
+        this.typePackage[2] = fyn;
+       
+        
+        
+    }
+    
+    public Package(int sn, int an, short idc, boolean ack, boolean syn, boolean fyn, byte[] data){
+        this.sequenceNumber = sn;
+        this.ackNumber = an;
+        this.idClientNumber = idc;
+        this.typePackage[0] = ack;
+        this.typePackage[1] = syn;
+        this.typePackage[2] = fyn;
+        this.data = data;
         
         
     }
