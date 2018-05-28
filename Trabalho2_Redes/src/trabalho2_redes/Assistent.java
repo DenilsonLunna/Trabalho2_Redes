@@ -66,6 +66,8 @@ public class Assistent extends Thread {
             assistentUDP.send(packageACK);
             System.out.println("package ACK sended");
             //____________________________________________________________________________________________________ACK sending
+            
+            System.out.println("==============================================================================================\n\n");
             //26
             int i = 0;
             int n = 0;
@@ -76,7 +78,6 @@ public class Assistent extends Thread {
                 DatagramPacket pktReceiveX = new DatagramPacket(pktBytes, pktBytes.length);
                 assistentUDP.receive(pktReceiveX);
                 Package pktReceived = convert.convertByteToPackage(pktBytes);
-                System.out.println("Pacakge Waited = " + numSeqWait);
                 System.out.println("Package received = " + pktReceived.sequenceNumber + " - ACK = " + pktReceived.ackNumber + " - Ref: " + pktReceived);
 
                 if (pktReceived.sequenceNumber == numSeqWait) {
@@ -92,6 +93,7 @@ public class Assistent extends Thread {
                     DatagramPacket packageACKN = new DatagramPacket(pktACKNSend, pktACKNSend.length, client.getIp(), client.getPort());
                     assistentUDP.send(packageACK);
                     System.out.println("Package Sended = " + ACKN.sequenceNumber + " ACk = " + ACKN.ackNumber);
+                    System.out.println("");
                 }
 
                 if(packagesList.size() == 26){

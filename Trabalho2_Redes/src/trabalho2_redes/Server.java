@@ -43,6 +43,7 @@ public class Server {
                 System.out.println("Server waiting packages from the clients");
                 serverUDP.receive(pktReceive);
                 System.out.println("Package SYN received");
+                System.out.println("==========================================    HANDSHAKE   ===============================================");
                 //__________________________________________________________________________________________________
                 
                 Package pack = convert.convertByteToPackage(packageFile);//converting from the byte for package
