@@ -5,6 +5,9 @@
  */
 
 package trabalho2_redes;
+    
+import java.util.ArrayList;
+import java.util.Scanner;
 
 /**
  * 
@@ -12,11 +15,11 @@ package trabalho2_redes;
  */
 public class TestClass {
     public static void main(String[] args) {
-        Package pkt = new Package();
-        ConvertClass c = new ConvertClass();
+      TimeOut time = new TimeOut();
+      while(!time.timeout){
+          System.out.println("teste");
+      }
         
-        byte[] b = c.convertPackageToByte(pkt);
-        System.out.println(b.length);
         
     }
 }

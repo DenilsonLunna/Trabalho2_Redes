@@ -25,7 +25,7 @@ import sun.security.x509.IPAddressName;
  * @author Sammy Guergachi <sguergachi at gmail.com>
  */
 public class Server {
-    //last code = 17
+    //last code = 20
     
     private static ArrayList<Assistent> assistentList = new ArrayList<>();
     

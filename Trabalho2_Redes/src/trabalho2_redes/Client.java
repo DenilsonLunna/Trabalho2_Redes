@@ -34,7 +34,6 @@ public class Client {
     private String fileName;
     private static ArrayList<Package> packagesFileList = new ArrayList<>();
     public DatagramSocket clienteUDP = null;
-
     public Client(String id, int port, String fileName) {
         this.idServer = id;
         this.fileName = fileName;
@@ -50,8 +49,9 @@ public class Client {
 
         //create Client
         Scanner input = new Scanner(System.in);
-        Client client = new Client("localHost", portRandom++, "arq1.mp3");
+        Client client = new Client("localHost", portRandom++, "arq2.png");
         ConvertClass convert = new ConvertClass();
+       
 
         /*System.out.println("Enter with ID-HostName from the Server");
         client.setId(input.next());
@@ -66,8 +66,9 @@ public class Client {
         try {
             //___________________________________________________________________________________Send SYN 
             IPAddress = InetAddress.getByName("localhost");
-            Package SYN = new Package(12345, 0, (short) 0, false, true, false);
-            Client.sendPackage(client, SYN, IPAddress, 6000);
+            Package SYN = new Package(0, 0, (short) 0, false, true, false);
+            client.sendPackage(client, SYN, IPAddress, 6000);
+            
             //___________________________________________________________________________________SYN sending
         } catch (UnknownHostException ex) {
             System.out.println("Erro ao Pegar IP do servidor. cod = 6");
@@ -81,31 +82,26 @@ public class Client {
 
             byte packageFile[] = new byte[692];
             DatagramPacket packageSYNACK = new DatagramPacket(packageFile, packageFile.length);
-            System.out.println("Waiting SYNACK...na porta");
             client.clienteUDP.receive(packageSYNACK);// receive package SYN-ACK
             portAssistent = packageSYNACK.getPort();
             addressAssistent = packageSYNACK.getAddress();
             pktSYNACKReceived = convert.convertByteToPackage(packageFile);
-            System.out.println("Package SYNACK Received.");
-            System.out.println("Server Package : SeqNum( " + pktSYNACKReceived.sequenceNumber + " )  ACKNumber( " + pktSYNACKReceived.ackNumber + " )  ID-Client( " + pktSYNACKReceived.idClientNumber + " )  Type-Package( " + pktSYNACKReceived.getTypePackage() + " )");
-            System.out.println("---------------------------------------------------------------------------------------------->\n");
+            System.out.println("Client Received Sequence Number : "+pktSYNACKReceived.sequenceNumber+" - ACK: "+pktSYNACKReceived.ackNumber+" - type: "+pktSYNACKReceived.getTypePackage());
 
         } catch (IOException ex) {
             System.out.println("Erro I/O receive package SYN-ACK of server. cod = 8");
         }
         //____________________________________________________________________________________SYNACK Received
 
-        
-        
         //____________________________________________________________________________________Send ACK 
-        Package ACK = new Package(pktSYNACKReceived.ackNumber, pktSYNACKReceived.sequenceNumber+1, pktSYNACKReceived.idClientNumber, true, false, false);
-        Client.sendPackage(client, ACK, addressAssistent, portAssistent);
+        Package ACK = new Package(pktSYNACKReceived.ackNumber, pktSYNACKReceived.sequenceNumber + 1, pktSYNACKReceived.idClientNumber, true, false, false);
+        client.sendPackage(client, ACK, addressAssistent, portAssistent);
+        
         //_____________________________________________________________________________________ACK sending   
 
-        
-        
         //_____________________________________________________________________________________Receive Package from the server
         Package pktReceived = null;
+
         try {
             byte pktB[] = new byte[692];
             DatagramPacket pkt = new DatagramPacket(pktB, pktB.length);
@@ -113,82 +109,91 @@ public class Client {
             portAssistent = pkt.getPort();
             addressAssistent = pkt.getAddress();
             pktReceived = convert.convertByteToPackage(pktB);
-            System.out.println("Server Package : SeqNum( " + pktReceived.sequenceNumber + " )  ACKNumber( " + pktReceived.ackNumber + " )  ID-Client( " + pktReceived.idClientNumber + " )  Type-Package( " + pktReceived.getTypePackage() + " )");
-            System.out.println("---------------------------------------------------------------------------------------------->\n");
+            System.out.println("Client Received Sequence Number : "+pktReceived.sequenceNumber+" - ACK: "+pktReceived.ackNumber+" - type: "+pktReceived.getTypePackage());
         } catch (IOException ex) {
             System.out.println("Erro I/O receive package SYN-ACK of server. cod = 17");
         }
-
         //_____________________________________________________________________________________Package Received
-        System.exit(0);
-        boolean havePackagesToSend = true;
-        int CWND = 512;
-        int cont = 1; // for each package sending cont increment * 2
-        int nextSecNum;
-        int sendBase;
-        int ssThresh = 10000;
-        while (havePackagesToSend) {
-            int qtdPacketsForSend = 0;
-            if (cont < ssThresh) {// grow exponentially
+        ReceiveACKs receiveACKs = new ReceiveACKs(client.clienteUDP, 692);
+        
+        int nextSecNum = 0;
+        int baseNumber = 0;
+        int lenghtCWND = 1;
+ 
+        
+        client.sendWindow(baseNumber, nextSecNum, lenghtCWND, packagesFileList, client, IPAddress, portAssistent, receiveACKs);
 
-                while (qtdPacketsForSend < cont) {// send packages 
-                    
-                    Package packForSend = packagesFileList.remove(packagesFileList.size() - 1);
-                    
-                    //packForSend.ackNumber = pktSYNACKReceived.sequenceNumber+1;
-                    Client.sendPackage(client, packForSend, addressAssistent, portAssistent);
-                    qtdPacketsForSend++;
-                }
-                
-                
-                int receiveACKs = 0;
-                while (receiveACKs < cont) {// receive acks
-                    try {
-
-                        byte packageFile[] = new byte[692];
-                        DatagramPacket packageSYNACK = new DatagramPacket(packageFile, packageFile.length);
-                        client.clienteUDP.receive(packageSYNACK);// receive package SYN-ACK
-                        portAssistent = packageSYNACK.getPort();
-                        addressAssistent = packageSYNACK.getAddress();
-                        pktSYNACKReceived = convert.convertByteToPackage(packageFile);
-                        System.out.println("Server Package : SeqNum( " + pktSYNACKReceived.sequenceNumber + " )  ACKNumber( " + pktSYNACKReceived.ackNumber + " )  ID-Client( " + pktSYNACKReceived.idClientNumber + " )  Type-Package( " + pktSYNACKReceived.getTypePackage() + " )");
-                        System.out.println("---------------------------------------------------------------------------------------------->\n");
-
-                    } catch (IOException ex) {
-                        System.out.println("Erro I/O receive package SYN-ACK of server. cod = 16");
-                    }
-                    receiveACKs++;
-                }
-                cont *= 2;
-                
-                
-            } else { //grow linearly
-                Package packForSend = packagesFileList.remove(packagesFileList.size() - 1);
-                Client.sendPackage(client, packForSend, addressAssistent, portAssistent);
-            }
-            if (packagesFileList.isEmpty()) {
-                havePackagesToSend = false;
-            }
-
-        }
-
-        //send packages from the file
     }
 
-    public static void sendPackage(Client client, Package pack, InetAddress ip, int port) {
+    public void sendPackage(Client client, Package pack, InetAddress ip, int port) {
 
         try {
+          
             byte[] packB = ConvertClass.convertPackageToByte(pack);
             DatagramPacket packetACK = new DatagramPacket(packB, packB.length, ip, port);
             client.clienteUDP.send(packetACK);
-            System.out.println("Send Pakcage " + pack.getTypePackage() + " for the Server");
-            System.out.println("Client Package : SeqNum( " + pack.sequenceNumber + " )  ACKNumber( " + (pack.ackNumber) + " )  "
-                    + "ID-Client( " + pack.idClientNumber + " )  Type-Package( " + pack.getTypePackage() + " )");
-            System.out.println("<----------------------------------------------------------------------------------------------\n");
+            System.out.println("Client Send Sequence Number : "+pack.sequenceNumber+" - ACK: "+pack.ackNumber+" - type: "+pack.getTypePackage());
         } catch (IOException ex) {
             System.out.println("Erro I/O to send pakcage ACK after SYNACK in Client. cod = 11");
         }
 
+    }
+
+    public void sendWindow (int base, int ackForServer, int cwnd, ArrayList<Package> packagesList, Client client, InetAddress ip, int port, ReceiveACKs receiveACKs) {
+        
+        System.out.println("CWND = "+cwnd);
+        ArrayList<Package> resendPackages = new ArrayList<>();
+        for (int i = 0; i < cwnd; i++) {
+            if (i > packagesFileList.size()) {
+                System.out.println("Finish"+i);
+                break;
+            } else {
+                Package pack = packagesList.remove(0);
+                resendPackages.add(pack);
+                pack.ackNumber = ackForServer;
+                ackForServer++;
+                sendPackage(client, pack, ip, port);
+  
+            }
+        }
+        System.out.println("lenght List: "+packagesFileList.size());
+        
+        
+        TimeOut time = new TimeOut();
+        int qtdACKsReceived = 0;
+        System.out.println(receiveACKs.ACKList.size());
+        while (!time.timeout) {
+            if (receiveACKs.ACKList.size() > 0) {
+                Package pack = receiveACKs.ACKList.remove(0); // get Last packageACK
+                base++;
+                qtdACKsReceived++;
+                if (qtdACKsReceived == cwnd) {
+                    break;
+                }
+            }
+
+        }
+        
+        if (time.timeout == false) {// no timeout
+            time.cond = false;
+            System.out.println("No TimeOut");
+            System.out.println("Ack receiveds = "+qtdACKsReceived);
+            cwnd *= 2;
+            if (base <= packagesFileList.size()) {
+                sendWindow(base, ackForServer, cwnd, packagesList, client, ip, port, receiveACKs);
+            }
+
+       } else {//timeout
+            //decrease ssthreass
+            System.out.println("Time Out ");
+            for (int i = 0; i < base; i++) {
+                resendPackages.remove(0);    
+            }
+            sendWindow(base, ackForServer, cwnd, resendPackages, client, ip, port,receiveACKs);
+
+        }
+        receiveACKs.finishThread();
+       
     }
 
     public static void toFillList(File file) {
@@ -197,13 +202,18 @@ public class Client {
         try {
             FileInputStream inFile = new FileInputStream(file);
             BufferedInputStream bufferFile = new BufferedInputStream(inFile);
+            int sequenceNumber = 0;
 
             while (n != -1) {
 
                 byte[] byteFile = new byte[512];
                 n = bufferFile.read(byteFile); // transform file to byte
                 Package pkt = new Package(byteFile);
+
+                pkt.sequenceNumber = sequenceNumber;
+                sequenceNumber += 1;
                 packagesFileList.add(pkt);
+                
             }
 
         } catch (FileNotFoundException fnfex) {
@@ -219,10 +229,6 @@ public class Client {
 
         File file = new File(url);
         return file;
-    }
-
-    public static void serializable(Package pkt) {
-
     }
 
     public String getFileName() {

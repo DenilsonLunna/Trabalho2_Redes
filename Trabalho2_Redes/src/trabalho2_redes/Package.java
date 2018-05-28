@@ -80,6 +80,11 @@ public class Package implements Serializable{
         }
         
     }
+    public void setPackageType(boolean ack, boolean syn, boolean fyn){
+        this.typePackage[0] = ack;
+        this.typePackage[1] = syn;
+        this.typePackage[2] = fyn;
+    }
 
    
     
