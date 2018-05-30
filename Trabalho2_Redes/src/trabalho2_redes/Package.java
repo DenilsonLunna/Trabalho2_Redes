@@ -85,7 +85,9 @@ public class Package implements Serializable{
         this.typePackage[1] = syn;
         this.typePackage[2] = fyn;
     }
-
+    public byte[] getData(){
+        return this.data;
+    }
    
     
     

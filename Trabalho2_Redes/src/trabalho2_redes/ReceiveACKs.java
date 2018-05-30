@@ -30,15 +30,20 @@ public class ReceiveACKs extends Thread {
     }
 
     @Override
-    public synchronized void run(){
-       
+    public  void run(){
+       int ackWaited = 1;
+       Package packBack = new Package();
         while (cycle) {
             try {
                 byte pktB[] = new byte[packageSize];
                 DatagramPacket pkt = new DatagramPacket(pktB, pktB.length);
                 client.receive(pkt);
-                Package pktReceived = ConvertClass.convertByteToPackage(pktB);
-                ACKList.add(pktReceived);
+                Package pktReceived = ConvertClass.convertByteToPackage(pktB);;
+                if(pktReceived.ackNumber == ackWaited && pktReceived != packBack){
+                    getPackagesListACK().add(pktReceived);
+                    ackWaited++;
+                }
+                packBack = pktReceived;
                 System.out.println("Client Received Sequence Number : "+pktReceived.sequenceNumber+" - ACK: "+pktReceived.ackNumber+" - type: "+pktReceived.getTypePackage());
             } catch (IOException ex) {
                 System.out.println("Erro I/O receive package SYN-ACK of server. cod = 20");
@@ -48,6 +53,10 @@ public class ReceiveACKs extends Thread {
     }
     public void finishThread(){
         this.cycle = false;
+    
+    }
+    public synchronized ArrayList<Package> getPackagesListACK(){
+        return this.ACKList;
     
     }
 

@@ -6,21 +6,18 @@
 package trabalho2_redes;
 
 import java.io.BufferedInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Scanner;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
@@ -34,6 +31,8 @@ public class Client {
     private String fileName;
     private ArrayList<Package> packagesFileList = new ArrayList<>();
     public DatagramSocket clienteUDP = null;
+    public int portAssistent = 0;
+    public InetAddress addressAssistent = null;
 
     public Client(String id, int port, String fileName) {
         this.idServer = id;
@@ -50,7 +49,15 @@ public class Client {
 
         //create Client
         //Scanner input = new Scanner(System.in);
-        Client client = new Client("localHost", portRandom++, "arq1.mp3");
+        /*
+        arq_13KB.png
+        arq_168KB.obj
+        arq_5855KB.mp3
+        arq_35969KB.mp4
+        arq_180KB.pdf
+        
+         */
+        Client client = new Client("localHost", portRandom++, "arq_5855KB.mp3");
         ConvertClass convert = new ConvertClass();
 
 
@@ -81,15 +88,14 @@ public class Client {
 
         //___________________________________________________________________________________Receive SYNACK
         Package pktSYNACKReceived = null;
-        int portAssistent = 0;
-        InetAddress addressAssistent = null;
+
         try {
 
             byte packageFile[] = new byte[692];
             DatagramPacket packageSYNACK = new DatagramPacket(packageFile, packageFile.length);
             client.clienteUDP.receive(packageSYNACK);// receive package SYN-ACK
-            portAssistent = packageSYNACK.getPort();
-            addressAssistent = packageSYNACK.getAddress();
+            client.portAssistent = packageSYNACK.getPort();
+            client.addressAssistent = packageSYNACK.getAddress();
             pktSYNACKReceived = convert.convertByteToPackage(packageFile);
             System.out.println("Client Received Sequence Number : " + pktSYNACKReceived.sequenceNumber + " - ACK: " + pktSYNACKReceived.ackNumber + " - type: " + pktSYNACKReceived.getTypePackage());
 
@@ -100,7 +106,7 @@ public class Client {
 
         //____________________________________________________________________________________Send ACK 
         Package ACK = new Package(pktSYNACKReceived.ackNumber, pktSYNACKReceived.sequenceNumber + 1, pktSYNACKReceived.idClientNumber, true, false, false);
-        client.sendPackage(client, ACK, addressAssistent, portAssistent);
+        client.sendPackage(client, ACK, client.addressAssistent, client.portAssistent);
 
         //_____________________________________________________________________________________ACK sending   
         //_____________________________________________________________________________________Receive Package from the server
@@ -110,8 +116,8 @@ public class Client {
             byte pktB[] = new byte[692];
             DatagramPacket pkt = new DatagramPacket(pktB, pktB.length);
             client.clienteUDP.receive(pkt);// receive package SYN-ACK
-            portAssistent = pkt.getPort();
-            addressAssistent = pkt.getAddress();
+            client.portAssistent = pkt.getPort();
+            client.addressAssistent = pkt.getAddress();
             pktReceived = convert.convertByteToPackage(pktB);
             System.out.println("Client Received Sequence Number : " + pktReceived.sequenceNumber + " - ACK: " + pktReceived.ackNumber + " - type: " + pktReceived.getTypePackage());
         } catch (IOException ex) {
@@ -126,8 +132,9 @@ public class Client {
         int baseNumber = 0;
         int lenghtCWND = 1;
         int ssthresh = 20;
-        client.sendWindow(baseNumber, nextSecNum, lenghtCWND, client.packagesFileList, client, IPAddress, portAssistent, receiveACKs, client.lenghtFile, ssthresh);
-        System.out.println("Good Job Man !! :)");
+        client.sendWindow(baseNumber, nextSecNum, lenghtCWND, null, client, receiveACKs, client.lenghtFile, ssthresh);
+
+        //Execution FYN
     }
 
     public void sendPackage(Client client, Package pack, InetAddress ip, int port) {
@@ -144,22 +151,32 @@ public class Client {
 
     }
 
-    public synchronized void sendWindow(int base, int ackForServer, int cwnd, ArrayList<Package> packagesList, Client client, InetAddress ip, int port, ReceiveACKs receiveACKs, int fileSize, int ssthresh) {
+    public synchronized void sendWindow(int base, int ackForServer, int cwnd, ArrayList<Package> resendPackages, Client client, ReceiveACKs receiveACKs, int fileSize, int ssthresh) {
         boolean stop = false;
-        ArrayList<Package> resendPackages = new ArrayList<>();
-        for (int i = 0; i < cwnd; i++) {
-            if (packagesFileList.isEmpty()) {
-                System.out.println("List Empty");
-                stop = true;
-                break;
-            }
-            Package pack = packagesList.remove(0);
-            resendPackages.add(pack);
-            pack.ackNumber = ackForServer;
-            ackForServer++;
-            sendPackage(client, pack, ip, port);
-            System.out.println("Send package");
+        ArrayList<Package> resendPackagesList = new ArrayList<>();
 
+        if (resendPackages != null) {
+            System.out.println("===============================================================================     Resend packages");
+            while (!resendPackages.isEmpty()) {
+                Package pack = resendPackages.remove(0);
+                resendPackagesList.add(pack);
+                sendPackage(client, pack, client.addressAssistent, client.portAssistent);
+
+            }
+        } else {
+            for (int i = 0; i < cwnd; i++) {
+                if (packagesFileList.isEmpty()) {
+                    System.out.println("List Empty");
+                    stop = true;
+                    break;
+                }
+                Package pack = client.packagesFileList.remove(0);
+                pack.ackNumber = ackForServer;
+                ackForServer++;
+                resendPackagesList.add(pack);
+                sendPackage(client, pack, client.addressAssistent, client.portAssistent);
+
+            }
         }
         if (stop == false) {
 
@@ -172,11 +189,11 @@ public class Client {
             TimeOut time = new TimeOut(500);
             while (!time.timeout) {
 
-                if (receiveACKs.ACKList.size() > 0) {
-                    Package pack = receiveACKs.ACKList.remove(0); // get Last packageACK
-                    //for (int i = 0; i < pack.sequenceNumber; i++) {
+                if (receiveACKs.getPackagesListACK().size() > 0) {
+                    Package pack = receiveACKs.getPackagesListACK().remove(0); // get Last packageACK
+                    // for (int i = 0; i < pack.sequenceNumber; i++) {
                     base++;
-                    //}
+                    // }
 
                     qtdACKsReceived++;
                     if (qtdACKsReceived == cwnd) {
@@ -187,16 +204,21 @@ public class Client {
             }
             if (base < cwnd || time.timeout) {//timeout || base < cwnd
                 //decrease ssthreass
-                System.out.println("Base < CWND");
+                if (base < cwnd) {
+                    System.out.println("===============================================================================  Base < CWND\n\n");
+                } else {
+                    System.out.println("=============================================================================== TimeOut\n\n");
+                }
+
                 System.out.println("Base = " + base);
                 System.out.println("Window = " + cwnd);
                 ssthresh = cwnd;
                 cwnd = 1;
-                receiveACKs.ACKList.clear();
-                for (int i = 0; i < base; i++) {
-                    resendPackages.remove(0);
+                receiveACKs.getPackagesListACK().clear();
+                for (int i = 0; i < qtdACKsReceived; i++) {
+                    resendPackagesList.remove(0);
                 }
-                sendWindow(base, ackForServer, cwnd, resendPackages, client, ip, port, receiveACKs, fileSize, ssthresh);
+                sendWindow(base, ackForServer, cwnd, resendPackagesList, client, receiveACKs, fileSize, ssthresh);
 
             } else if (time.timeout == false) {// no timeout
                 time.cond = false;
@@ -207,11 +229,12 @@ public class Client {
                 } else {
                     cwnd += 1;
                 }
-                
+
                 System.out.println("New Window = " + cwnd);
                 if (base < fileSize) {
-                    System.out.println("List = " + packagesList.size());
-                    sendWindow(base, ackForServer, cwnd, packagesList, client, ip, port, receiveACKs, fileSize, ssthresh);
+                    receiveACKs.getPackagesListACK().clear();
+
+                    sendWindow(base, ackForServer, cwnd, null, client, receiveACKs, fileSize, ssthresh);
                 }
 
             }
@@ -239,6 +262,8 @@ public class Client {
                 c.packagesFileList.add(pkt);
 
             }
+            
+            
 
         } catch (FileNotFoundException fnfex) {
             System.out.println("File not Found in Client. cod = 2");

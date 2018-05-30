@@ -11,6 +11,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Timer;
 
@@ -72,31 +73,60 @@ public class Assistent extends Thread {
             int i = 0;
             int n = 0;
             int numSeqWait = 0;
-            Package acumulativeACK = null;
-            
-            
-            
+           
+
             while (true) {
-                    byte[] pktBytes = new byte[692];
-                    DatagramPacket pktReceiveX = new DatagramPacket(pktBytes, pktBytes.length);
-                    assistentUDP.receive(pktReceiveX);
-                    Package pktReceived = convert.convertByteToPackage(pktBytes);
+                if(packagesList.size() == 11709){
+                    System.out.println("Finish");
+                    break;
+                    
+                }
+                byte[] pktBytes = new byte[692];
+                DatagramPacket pktReceiveX = new DatagramPacket(pktBytes, pktBytes.length);
+                assistentUDP.receive(pktReceiveX);
+                Package pktReceived = convert.convertByteToPackage(pktBytes);
+               
+                if (pktReceived.getTypePackage() == "Data Package") {
+                    
                     System.out.println("Package received = " + pktReceived.sequenceNumber + " - ACK = " + pktReceived.ackNumber);
                     if (pktReceived.sequenceNumber == numSeqWait) {
                         packagesList.add(pktReceived);
                         numSeqWait += 1;
-                        acumulativeACK = pktReceived;
+                        
                         
                     }
-                
-              
-                    Package ACKN = new Package(acumulativeACK.ackNumber, acumulativeACK.sequenceNumber + 1, true, false, false);
+                    Package ACKN = new Package(numSeqWait-1, numSeqWait, true, false, false);
                     this.sendPackageACK(assistentUDP, ACKN, client.getIp(), client.getPort());
+                    
+                }else{
+                    break;
+                }
                 
                 
-              
             }
+            ArrayList<byte[]> array = new ArrayList<>();
+            for (Package b : packagesList) {
+                array.add(b.getData());
+            }
+            byte[] together = new byte[array.size() * 512];
+            int position = 0;
+            File arq = new File("C:\\Users\\Denil\\Desktop\\arq.mp3");
+            for (int j = 0; j < array.size(); j++) {
+                for (int k = 0; k < array.get(j).length; k++) {
+                    together[position] = array.get(j)[k];
+                    position++;
+                    
+                }
+                
+            }
+            System.out.println(together.length/512);
+            Files.write(arq.toPath(), together);
+            System.out.println("File created");
             
+            
+            
+            //Execution FYN
+
         } catch (IOException ex) {
             System.out.println("Erro I/O to send package to client. cod = 10");
         }
