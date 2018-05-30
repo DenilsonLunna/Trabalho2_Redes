@@ -8,6 +8,7 @@ package trabalho2_redes;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.sql.Time;
 import java.util.ArrayList;
 
 /**
@@ -20,6 +21,7 @@ public class ReceiveACKs extends Thread {
     private DatagramSocket client;
     private int packageSize;
     public boolean cycle = true;
+    public boolean braid;
 
     public ReceiveACKs(DatagramSocket client, int packageSize) {
         this.client = client;
@@ -28,7 +30,8 @@ public class ReceiveACKs extends Thread {
     }
 
     @Override
-    public void run(){
+    public synchronized void run(){
+       
         while (cycle) {
             try {
                 byte pktB[] = new byte[packageSize];
@@ -41,6 +44,7 @@ public class ReceiveACKs extends Thread {
                 System.out.println("Erro I/O receive package SYN-ACK of server. cod = 20");
             }
         }
+        System.out.println("Thread ReceiveACKs finish");
     }
     public void finishThread(){
         this.cycle = false;

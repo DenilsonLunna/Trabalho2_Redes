@@ -14,8 +14,10 @@ public class TimeOut extends Thread {
     public double time;
     public boolean timeout;
     boolean cond = true;
+    public int lenghtTime;
 
-    public TimeOut() {
+    public TimeOut(int time) {
+        this.lenghtTime = time;
         this.start();
     }
 
@@ -26,11 +28,11 @@ public class TimeOut extends Thread {
             while (cond) {
                 try {
                     time++;
-                    Thread.sleep(100);
+                    Thread.sleep(1);
                 } catch (InterruptedException ex) {
                     System.out.println("InterruptionException Thread TimeOut. cod = 18");
                 }
-                if(time >= 5){
+                if(time >= lenghtTime){
                     timeout = true;
                     cond = false;
                 }else{
@@ -49,7 +51,9 @@ public class TimeOut extends Thread {
         
 
     }
-
+    public void setTime(int time){
+        this.lenghtTime = time;
+    }
     public void stopTime() {
         System.out.println("Finalizado");
         cond = false;

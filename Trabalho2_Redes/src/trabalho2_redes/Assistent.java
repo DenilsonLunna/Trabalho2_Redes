@@ -12,6 +12,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Timer;
 
 /**
  *
@@ -39,12 +40,13 @@ public class Assistent extends Thread {
 
     public void run() {
         try {
+
             //____________________________________________________________________________________________________Send SYNACK
             DatagramSocket assistentUDP = new DatagramSocket(port);
             Package SYNACK = new Package(0, client.getSequenceNumber() + 1, idClient++, true, true, false);//SYNACK
             byte[] pktSend = convert.convertPackageToByte(SYNACK);
             DatagramPacket packageSYNACK = new DatagramPacket(pktSend, pktSend.length, client.getIp(), client.getPort());
-            
+
             assistentUDP.send(packageSYNACK);
             System.out.println("package SYNACK sended");
             //____________________________________________________________________________________________________SYNACK sending
@@ -61,45 +63,40 @@ public class Assistent extends Thread {
 
             //____________________________________________________________________________________________________Send ACK
             Package ACK = new Package(pktACKReceived.ackNumber, pktACKReceived.sequenceNumber + 1, pktACKReceived.idClientNumber, true, false, false);
-            byte[] pktACKSend = convert.convertPackageToByte(ACK);
-            DatagramPacket packageACK = new DatagramPacket(pktACKSend, pktACKSend.length, client.getIp(), client.getPort());
-            assistentUDP.send(packageACK);
+            this.sendPackageACK(assistentUDP, ACK, client.getIp(), client.getPort());
             System.out.println("package ACK sended");
             //____________________________________________________________________________________________________ACK sending
-            
+
             System.out.println("==============================================================================================\n\n");
             //26
             int i = 0;
             int n = 0;
             int numSeqWait = 0;
+            Package acumulativeACK = null;
+            
+            
+            
             while (true) {
-
-                byte[] pktBytes = new byte[692];
-                DatagramPacket pktReceiveX = new DatagramPacket(pktBytes, pktBytes.length);
-                assistentUDP.receive(pktReceiveX);
-                Package pktReceived = convert.convertByteToPackage(pktBytes);
-                System.out.println("Package received = " + pktReceived.sequenceNumber + " - ACK = " + pktReceived.ackNumber + " - Ref: " + pktReceived);
-
-                if (pktReceived.sequenceNumber == numSeqWait) {
-                    packagesList.add(pktReceived);
-                    numSeqWait += 1;
-
-                    
-                    
-                    
-                    //___________________________________________________________________________________________________Send ACK 
-                    Package ACKN = new Package(pktReceived.ackNumber, pktReceived.sequenceNumber + 1, true, false, false);
-                    byte[] pktACKNSend = convert.convertPackageToByte(ACK);
-                    DatagramPacket packageACKN = new DatagramPacket(pktACKNSend, pktACKNSend.length, client.getIp(), client.getPort());
-                    assistentUDP.send(packageACK);
-                    System.out.println("Package Sended = " + ACKN.sequenceNumber + " ACk = " + ACKN.ackNumber);
-                    System.out.println("");
-                }
-
-                if(packagesList.size() == 26){
-                    break;
-                }
+                    byte[] pktBytes = new byte[692];
+                    DatagramPacket pktReceiveX = new DatagramPacket(pktBytes, pktBytes.length);
+                    assistentUDP.receive(pktReceiveX);
+                    Package pktReceived = convert.convertByteToPackage(pktBytes);
+                    System.out.println("Package received = " + pktReceived.sequenceNumber + " - ACK = " + pktReceived.ackNumber);
+                    if (pktReceived.sequenceNumber == numSeqWait) {
+                        packagesList.add(pktReceived);
+                        numSeqWait += 1;
+                        acumulativeACK = pktReceived;
+                        
+                    }
+                
+              
+                    Package ACKN = new Package(acumulativeACK.ackNumber, acumulativeACK.sequenceNumber + 1, true, false, false);
+                    this.sendPackageACK(assistentUDP, ACKN, client.getIp(), client.getPort());
+                
+                
+              
             }
+            
         } catch (IOException ex) {
             System.out.println("Erro I/O to send package to client. cod = 10");
         }
@@ -111,7 +108,7 @@ public class Assistent extends Thread {
             byte[] packB = ConvertClass.convertPackageToByte(pack);
             DatagramPacket packetACK = new DatagramPacket(packB, packB.length, ip, port);
             ds.send(packetACK);
-
+            System.out.println("Package Sended : Sequence Number = " + pack.sequenceNumber + " ACk = " + pack.ackNumber);
         } catch (IOException ex) {
             System.out.println("Erro I/O to send pakcage ACK after SYNACK in Client. cod = 15");
         }
