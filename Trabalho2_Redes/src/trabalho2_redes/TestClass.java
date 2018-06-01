@@ -6,6 +6,8 @@
 
 package trabalho2_redes;
     
+import java.util.ArrayList;
+
 
 
 /**
@@ -14,7 +16,7 @@ package trabalho2_redes;
  */
 public class TestClass {
     public static void main(String[] args) {
-      TimeOut time = new TimeOut(300);
+      TimeOut t  = new TimeOut(5000);
        
       
         
