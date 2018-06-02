@@ -39,35 +39,51 @@ public class Assistent extends Thread {
         this.port = port;
     }
 
+    public Package sendSYNACK(InfoClient client, DatagramSocket assistentUDP, ReceiveACKs receive) {
+        receive.getPackagesListACK().clear();
+        //___________________________________________________________________________________Send SYN 
+        Package SYNACK = new Package(0, client.getSequenceNumber() + 1, idClient++, true, true, false);//SYNACK
+        sendPackageACK(assistentUDP, SYNACK, client.getIp(), client.getPort());
+        //___________________________________________________________________________________SYN sending
+        Package pktReceived = null;
+        TimeOut time = new TimeOut(500);
+        while (!time.timeout) {
+            if (receive.getPackagesListACK().size() > 0) {
+                pktReceived = receive.getPackagesListACK().remove(0);
+            }
+            if (pktReceived != null) {
+                break;
+            }
+
+        }
+        if (time.timeout) {
+            time.cond = false;
+            System.out.println("=================================     TIME OUT");
+            pktReceived = sendSYNACK(client, assistentUDP, receive);
+        }
+        time.cond = false;
+        return pktReceived;
+
+    }
+
+    public void sendACK(InfoClient client, DatagramSocket assistentUDP, ReceiveACKs receive, Package pktACKReceived) {
+        receive.getPackagesListACK().clear();
+        //___________________________________________________________________________________Send SYN 
+        Package ACK = new Package(pktACKReceived.ackNumber, pktACKReceived.sequenceNumber + 1, pktACKReceived.idClientNumber, true, false, false);
+        sendPackageACK(assistentUDP, ACK, client.getIp(), client.getPort());
+        //___________________________________________________________________________________SYN sending
+    }
+
     public void run() {
+
         try {
-
-            //____________________________________________________________________________________________________Send SYNACK
             DatagramSocket assistentUDP = new DatagramSocket(port);
-            Package SYNACK = new Package(0, client.getSequenceNumber() + 1, idClient++, true, true, false);//SYNACK
-            byte[] pktSend = convert.convertPackageToByte(SYNACK);
-            DatagramPacket packageSYNACK = new DatagramPacket(pktSend, pktSend.length, client.getIp(), client.getPort());
+            ReceiveACKs receive = new ReceiveACKs(assistentUDP, 692);
 
-            assistentUDP.send(packageSYNACK);
-            System.out.println("package SYNACK sended");
-            //____________________________________________________________________________________________________SYNACK sending
+            Package pktACKReceived = sendSYNACK(client, assistentUDP, receive); // send SYNACK and receive ACK
+            sendACK(client, assistentUDP, receive, pktACKReceived);//send ACK
 
-            System.out.println("Assistent Waiting ACK from the Client...");
-
-            //____________________________________________________________________________________________________Receive ACK
-            byte[] pktACKReceive = new byte[692];
-            DatagramPacket pktReceiveACK = new DatagramPacket(pktACKReceive, pktACKReceive.length);
-            assistentUDP.receive(pktReceiveACK);
-            Package pktACKReceived = convert.convertByteToPackage(pktACKReceive);
-            System.out.println("ACK received from the client.");
-            //_____________________________________________________________________________________________________ ACK received
-
-            //____________________________________________________________________________________________________Send ACK
-            Package ACK = new Package(pktACKReceived.ackNumber, pktACKReceived.sequenceNumber + 1, pktACKReceived.idClientNumber, true, false, false);
-            this.sendPackageACK(assistentUDP, ACK, client.getIp(), client.getPort());
-            System.out.println("package ACK sended");
-            //____________________________________________________________________________________________________ACK sending
-
+            receive.cycle = false;
             System.out.println("==============================================================================================\n\n");
             //26
             int i = 0;
@@ -75,7 +91,7 @@ public class Assistent extends Thread {
             int numSeqWait = 0;
             int mySequenceNumber = 0;
             while (true) {
-                if (packagesList.size() == 361) {
+                if (packagesList.size() == 362) {
                     System.out.println("Finish");
                     break;
 
@@ -93,10 +109,9 @@ public class Assistent extends Thread {
                         numSeqWait += 1;
                         mySequenceNumber++;
 
-                        
-                    }else{
+                    } else {
                         System.out.println("ACK discarted");
-                        
+
                     }
                     Package ACKN = new Package(mySequenceNumber, numSeqWait, true, false, false);
                     this.sendPackageACK(assistentUDP, ACKN, client.getIp(), client.getPort());

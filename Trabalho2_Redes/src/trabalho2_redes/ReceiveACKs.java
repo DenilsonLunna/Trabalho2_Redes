@@ -18,49 +18,50 @@ import java.util.ArrayList;
 public class ReceiveACKs extends Thread {
 
     public ArrayList<Package> ACKList = new ArrayList<>();
-    private DatagramSocket client;
+    private DatagramSocket DS;
     private int packageSize;
     public boolean cycle = true;
     public boolean braid;
+    public DatagramPacket dp;
 
-    public ReceiveACKs(DatagramSocket client, int packageSize) {
-        this.client = client;
+    public ReceiveACKs(DatagramSocket DS, int packageSize) {
+        this.DS = DS;
         this.packageSize = packageSize;
         this.start();
     }
 
     @Override
-    public  void run(){
-       int ackWaited = 1;
-       Package packBack = new Package();
+    public void run() {
+        int ackWaited = 1;
+        Package packBack = new Package();
         while (cycle) {
             try {
                 byte pktB[] = new byte[packageSize];
                 DatagramPacket pkt = new DatagramPacket(pktB, pktB.length);
-                client.receive(pkt);
+                DS.receive(pkt);
                 Package pktReceived = ConvertClass.convertByteToPackage(pktB);
-                System.out.println("ack waited = "+ackWaited);
-             
-                    System.out.println("Client Received Sequence Number : "+pktReceived.sequenceNumber+" - ACK: "+pktReceived.ackNumber+" - type: "+pktReceived.getTypePackage());
-                    getPackagesListACK().add(pktReceived);
-                    //ackWaited++;
-                
-                
-                
-                
+                if (pktReceived.getTypePackage() == "SYNACK") {
+                    dp = pkt;
+                }
+
+                System.out.println("Package Received with Sequence Number : " + pktReceived.sequenceNumber + " - ACK: " + pktReceived.ackNumber + " - type: " + pktReceived.getTypePackage());
+                getPackagesListACK().add(pktReceived);
+
             } catch (IOException ex) {
-                System.out.println("Erro I/O receive package SYN-ACK of server. cod = 20");
+                System.out.println("Erro I/O receive package. cod = 20");
             }
         }
         System.out.println("Thread ReceiveACKs finish");
     }
-    public void finishThread(){
+
+    public void finishThread() {
         this.cycle = false;
-    
+
     }
-    public synchronized ArrayList<Package> getPackagesListACK(){
+
+    public synchronized ArrayList<Package> getPackagesListACK() {
         return this.ACKList;
-    
+
     }
 
 }
