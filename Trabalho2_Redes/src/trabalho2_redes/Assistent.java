@@ -14,6 +14,8 @@ import java.net.SocketException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Timer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -41,10 +43,10 @@ public class Assistent extends Thread {
 
     public Package sendSYNACK(InfoClient client, DatagramSocket assistentUDP, ReceiveACKs receive) {
         receive.getPackagesListACK().clear();
-        //___________________________________________________________________________________Send SYN 
-        Package SYNACK = new Package(0, client.getSequenceNumber() + 1, idClient++, true, true, false);//SYNACK
+        //___________________________________________________________________________________Send SYNACK 
+        Package SYNACK = new Package(4321, client.getSequenceNumber() + 1, idClient++, true, true, false);//SYNACK
         sendPackageACK(assistentUDP, SYNACK, client.getIp(), client.getPort());
-        //___________________________________________________________________________________SYN sending
+        //___________________________________________________________________________________SYNACK sending
         Package pktReceived = null;
         TimeOut time = new TimeOut(500);
         while (!time.timeout) {
@@ -62,16 +64,45 @@ public class Assistent extends Thread {
             pktReceived = sendSYNACK(client, assistentUDP, receive);
         }
         time.cond = false;
+        receive.finishThread();
         return pktReceived;
 
     }
+    public void FYNExecution(DatagramSocket assistentUDP, Package packFYN, ReceiveACKs receive){
+        
+        Package SYNACK = new Package(4322, packFYN.sequenceNumber + 1, idClient, true, false, true);//FYNACK
+        sendPackageACK(assistentUDP, SYNACK, client.getIp(), client.getPort());
+        
+        
+        Package FYN = new Package(4322, 0, idClient, false,false,true);//FYN
+        sendPackageACK(assistentUDP, FYN, client.getIp(), client.getPort());
+        
+        TimeOut time = new TimeOut(500);
+        Package pktReceived = null;
+        while (!time.timeout) {
+            if (receive.getPackagesListACK().size() > 0) {
+                pktReceived = receive.getPackagesListACK().remove(0);
+            }
+            if (pktReceived != null) {
+                break;
+            }
 
-    public void sendACK(InfoClient client, DatagramSocket assistentUDP, ReceiveACKs receive, Package pktACKReceived) {
-        receive.getPackagesListACK().clear();
+        }
+        if (time.timeout) {
+            time.cond = false;
+            System.out.println("=================================     TIME OUT");
+            FYNExecution(assistentUDP, packFYN, receive);
+        }
+       
+    
+    }
+    public void sendACK(InfoClient client, DatagramSocket assistentUDP,Package pktACKReceived) {
+     
         //___________________________________________________________________________________Send SYN 
         Package ACK = new Package(pktACKReceived.ackNumber, pktACKReceived.sequenceNumber + 1, pktACKReceived.idClientNumber, true, false, false);
         sendPackageACK(assistentUDP, ACK, client.getIp(), client.getPort());
         //___________________________________________________________________________________SYN sending
+        
     }
 
     public void run() {
@@ -81,26 +112,28 @@ public class Assistent extends Thread {
             ReceiveACKs receive = new ReceiveACKs(assistentUDP, 692);
 
             Package pktACKReceived = sendSYNACK(client, assistentUDP, receive); // send SYNACK and receive ACK
-            sendACK(client, assistentUDP, receive, pktACKReceived);//send ACK
+            sendACK(client, assistentUDP, pktACKReceived);//send ACK
 
-            receive.cycle = false;
+            receive.finishThread();
+           
             System.out.println("==============================================================================================\n\n");
             //26
-            int i = 0;
-            int n = 0;
-            int numSeqWait = 0;
-            int mySequenceNumber = 0;
+            
+            int numSeqWait = pktACKReceived.sequenceNumber+1;
+            int mySequenceNumber = 4322;
+            Package FYN = null;
             while (true) {
-                if (packagesList.size() == 362) {
-                    System.out.println("Finish");
-                    break;
-
-                }
+               
                 byte[] pktBytes = new byte[692];
                 DatagramPacket pktReceiveX = new DatagramPacket(pktBytes, pktBytes.length);
                 assistentUDP.receive(pktReceiveX);
                 Package pktReceived = convert.convertByteToPackage(pktBytes);
-
+                if(pktReceived.getTypePackage() == "FYN"){
+                    FYN = pktReceived;
+                    System.out.println("FYN RECEIVED");
+                    receive.finishThread();
+                    break;
+                }else
                 if (pktReceived.getTypePackage() == "Data Package") {
 
                     System.out.println("Package received = " + pktReceived.sequenceNumber + " - ACK = " + pktReceived.ackNumber);
@@ -116,11 +149,12 @@ public class Assistent extends Thread {
                     Package ACKN = new Package(mySequenceNumber, numSeqWait, true, false, false);
                     this.sendPackageACK(assistentUDP, ACKN, client.getIp(), client.getPort());
 
-                } else {
-                    break;
                 }
-
+                
             }
+            ReceiveACKs rec = new ReceiveACKs(assistentUDP, 692);
+            FYNExecution(assistentUDP, FYN, rec);
+            rec.finishThread();
             ArrayList<byte[]> array = new ArrayList<>();
             for (Package b : packagesList) {
                 array.add(b.getData());
@@ -139,20 +173,20 @@ public class Assistent extends Thread {
             System.out.println(together.length / 512);
             Files.write(arq.toPath(), together);
             System.out.println("File created");
-
+            
             //Execution FYN
         } catch (IOException ex) {
             System.out.println("Erro I/O to send package to client. cod = 10");
-        }
+        } 
     }
-
+    
     public void sendPackageACK(DatagramSocket ds, Package pack, InetAddress ip, int port) {
 
         try {
             byte[] packB = ConvertClass.convertPackageToByte(pack);
             DatagramPacket packetACK = new DatagramPacket(packB, packB.length, ip, port);
             ds.send(packetACK);
-            System.out.println("Package Sended : Sequence Number = " + pack.sequenceNumber + " ACk = " + pack.ackNumber);
+            System.out.println("Package Sended : Sequence Number = " + pack.sequenceNumber + " ACk = " + pack.ackNumber+" type = "+pack.getTypePackage());
         } catch (IOException ex) {
             System.out.println("Erro I/O to send pakcage ACK after SYNACK in Client. cod = 15");
         }

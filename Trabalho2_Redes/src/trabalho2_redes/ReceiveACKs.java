@@ -23,16 +23,19 @@ public class ReceiveACKs extends Thread {
     public boolean cycle = true;
     public boolean braid;
     public DatagramPacket dp;
+   
 
     public ReceiveACKs(DatagramSocket DS, int packageSize) {
         this.DS = DS;
         this.packageSize = packageSize;
+        
         this.start();
     }
 
     @Override
     public void run() {
         int ackWaited = 1;
+        int cont = 0;
         Package packBack = new Package();
         while (cycle) {
             try {
@@ -43,7 +46,8 @@ public class ReceiveACKs extends Thread {
                 if (pktReceived.getTypePackage() == "SYNACK") {
                     dp = pkt;
                 }
-
+               
+                
                 System.out.println("Package Received with Sequence Number : " + pktReceived.sequenceNumber + " - ACK: " + pktReceived.ackNumber + " - type: " + pktReceived.getTypePackage());
                 getPackagesListACK().add(pktReceived);
 
